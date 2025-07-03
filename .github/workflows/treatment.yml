@@ -1,4 +1,6 @@
-ame: Trivy Treatment Pipeline (Incremental Scan)
+
+
+name: Trivy Treatment Pipeline (Incremental Scan)
 
 on:
   push:
