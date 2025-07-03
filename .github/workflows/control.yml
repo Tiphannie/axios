@@ -33,9 +33,18 @@ jobs:
       - name: Record reproducibility metadata
         run: ./scripts/record-metadata.sh
 
+      - name: Download Trivy DB if not present
+        run: |
+          if [ ! -d ~/.cache/trivy/db ]; then
+            echo "Trivy DB not found, downloading..."
+            trivy image --download-db-only alpine:latest
+          else
+            echo "Trivy DB already present."
+          fi
+
       - name: Run Trivy full scan on filesystem
         run: |
-          export TRIVY_SKIP_UPDATE=true
+          export TRIVY_SKIP_DB_UPDATE=true
           START_TIME=$(date +%s)
           trivy fs --format json --output scan-reports/full-scan-${{ github.sha }}.json .
           END_TIME=$(date +%s)
