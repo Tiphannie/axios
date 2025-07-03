@@ -1,0 +1,58 @@
+# =========================
+# control.yml (Full Scan Baseline)
+# =========================
+
+name: Trivy Control Pipeline (Full Scan)
+
+on:
+  push:
+    branches:
+      - experiment/freeze-lockfiles
+
+jobs:
+  full-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore Trivy DB cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-v1
+
+      - name: Install pinned Trivy
+        run: |
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.62.0/trivy_0.62.0_Linux-64bit.deb
+          sudo dpkg -i trivy_0.62.0_Linux-64bit.deb
+
+      - name: Setup artifact directories
+        run: ./scripts/setup-artifacts.sh
+
+      - name: Record reproducibility metadata
+        run: ./scripts/record-metadata.sh
+
+      - name: Run Trivy full scan on filesystem
+        run: |
+          export TRIVY_SKIP_UPDATE=true
+          START_TIME=$(date +%s)
+          trivy fs --format json --output scan-reports/full-scan-${{ github.sha }}.json .
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "Scan duration (seconds): ${DURATION}" >> logs/scan-info-${GITHUB_SHA}.txt
+          echo "Scan skipped: false" >> logs/scan-info-${GITHUB_SHA}.txt
+
+      - name: Upload scan report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-scan-report
+          path: scan-reports/full-scan-${{ github.sha }}.json
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ github.sha }}
+          path: logs/
+
+---

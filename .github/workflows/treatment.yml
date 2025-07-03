@@ -1,0 +1,55 @@
+ame: Trivy Treatment Pipeline (Incremental Scan)
+
+on:
+  push:
+    branches:
+      - experiment/freeze-lockfiles
+
+jobs:
+  incremental-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore Trivy DB cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-v1
+
+      - name: Install pinned Trivy
+        run: |
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.62.0/trivy_0.62.0_Linux-64bit.deb
+          sudo dpkg -i trivy_0.62.0_Linux-64bit.deb
+
+      - name: Setup artifact directories
+        run: ./scripts/setup-artifacts.sh
+
+      - name: Record reproducibility metadata
+        run: ./scripts/record-metadata.sh
+
+      - name: Check for lockfile changes and conditionally run Trivy scan
+        run: |
+          export TRIVY_SKIP_UPDATE=true
+          if git diff --name-only HEAD^ HEAD | grep -E 'package-lock.json|Pipfile.lock'; then
+          echo "Lockfile changed, running incremental scan."
+          START_TIME=$(date +%s)
+          trivy fs --format json --output scan-reports/incremental-scan-${{ github.sha }}.json .
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "Scan duration (seconds): ${DURATION}" >> logs/scan-info-${GITHUB_SHA}.txt
+          echo "Scan skipped: false" >> logs/scan-info-${GITHUB_SHA}.txt
+          else
+            echo "No lockfile changes detected, skipping scan."
+            echo "{}" > scan-reports/incremental-scan-${{ github.sha }}.json
+            echo "Scan duration (seconds): 0" >> logs/scan-info-${GITHUB_SHA}.txt
+            echo "Scan skipped: true" >> logs/scan-info-${GITHUB_SHA}.txt
+          fi
+
+
+      - name: Upload scan report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: incremental-scan-report
+          path: scan-reports/incremental-scan-${{ github.sha }}.json
