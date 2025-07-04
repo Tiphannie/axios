@@ -7,7 +7,8 @@ name: Trivy Control Pipeline (Full Scan)
 on:
   push:
     branches:
-      - experiment/freeze-lockfiles
+      - replay-latest-50
+  workflow_dispatch:
 
 jobs:
   full-scan:

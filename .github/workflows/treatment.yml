@@ -5,8 +5,9 @@ name: Trivy Treatment Pipeline (Incremental Scan)
 on:
   push:
     branches:
-      - experiment/freeze-lockfiles
-
+      - replay-latest-50
+  workflow_dispatch:
+  
 jobs:
   incremental-scan:
     runs-on: ubuntu-latest
