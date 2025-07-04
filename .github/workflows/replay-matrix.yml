@@ -62,7 +62,7 @@ jobs:
           - b4a3a1e2172389c5fe1b817faf1d76cd44518c6d
           - 4b4a21b40387160577f6eaad0d91b882d0482956
           - 318b583526c825c2831c7b88b88c6d4c2551852a
-        fail-fast: false
+        
 
     steps:
       - name: Checkout specific commit
