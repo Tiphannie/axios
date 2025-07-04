@@ -1,6 +1,9 @@
 name: Replay Trivy Scans on Last 50 Commits (Full + Incremental)
 
 on:
+  push:
+      branches:
+        - replay-latest-50
   workflow_dispatch:
 
 jobs:
